@@ -1,0 +1,137 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noah's Ark</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1 id="homeTitle"><img src="sprites/dove.png" class="icon"> Noah's Ark</h1>
+        <button id="stageBadge" title="Back to start"><img src="sprites/home.png" class="icon"> Home</button>
+    </header>
+
+    <!-- TUTORIAL DIALOG -->
+    <div id="tutorial" class="screen">
+        <div class="card tut-card">
+            <img id="tutImg" src="sprites/noah_happy.png" class="tut-noah">
+            <div class="tut-body">
+                <p id="tutText"></p>
+                <div class="tut-footer">
+                    <span id="tutCount" class="tut-count"></span>
+                    <button id="tutSkip">Skip</button>
+                    <button id="tutNext" class="big">Next <img src="sprites/arrow.png" class="icon"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTRO -->
+    <section id="intro" class="screen active">
+        <div class="hero">
+            <div class="hero-ark"><img src="sprites/ark.png" class="hero-ark-img"></div>
+            <h2 class="hero-title">Noah's Ark</h2>
+            <p class="verse">"Make thee an ark of gopher wood…" – Genesis 6:14</p>
+        </div>
+        <button class="menu-story" data-go="1">
+            <span class="mi"><img src="sprites/book.png" class="mi-img"></span>
+            <span><b>Follow the story</b><small>All three minigames in order</small></span>
+        </button>
+        <p class="hint center-t">Or pick a minigame:</p>
+        <div class="menu-grid">
+            <button class="menu-card c1" data-go="1" data-direct="1">
+                <span class="mi"><img src="sprites/axe.png" class="mi-img"></span><b>1 · Building the Ark</b><small>Chop trees and make planks</small>
+            </button>
+            <button class="menu-card c2" data-go="2">
+                <span class="mi"><img src="sprites/elephant.png" class="mi-img"></span><b>2 · The Animals</b><small>A memory game against the clock</small>
+            </button>
+            <button class="menu-card c3" data-go="3">
+                <span class="mi"><img src="sprites/wave.png" class="mi-img"></span><b>3 · The Flood</b><small>Fix the boat and feed everyone</small>
+            </button>
+        </div>
+    </section>
+
+    <!-- MINIGAME 1 -->
+    <section id="game1" class="screen">
+        <div class="layout">
+            <div class="map-wrap">
+                <div id="map"></div>
+                <p class="hint">Click the trees to chop them <img src="sprites/axe.png" class="icon"></p>
+            </div>
+            <aside class="panel">
+                <div class="resources">
+                    <div class="res"><img src="sprites/log.png" class="icon"> Wood <b id="wood">0</b></div>
+                    <div class="res"><img src="sprites/plank.png" class="icon"> Planks <b id="planks">0</b></div>
+                    <div class="res"><img src="sprites/stopwatch.png" class="icon"> Wood/s: <b id="wps">0</b></div>
+                </div>
+                <button id="craftBtn" class="big">Make plank</button>
+                <button id="nextBtn" class="big" style="display:none;width:100%;margin-bottom:12px;background:#8bd36b"><img src="sprites/arrow.png" class="icon"> Next stage: the animals</button>
+                <div class="goal">
+                    <div class="bar"><div id="goalBar"></div></div>
+                    <span id="goalTxt">0 / 300 planks</span>
+                </div>
+                <h3>Upgrades</h3>
+                <div id="upgrades"></div>
+            </aside>
+        </div>
+    </section>
+
+    <!-- MINIGAME 2 -->
+    <section id="game2" class="screen">
+        <div class="card center wide">
+            <h2>The animals arrive two by two</h2>
+            <div class="stats">
+                <span><img src="sprites/stopwatch.png" class="icon"> <b id="memTime">0.0</b>s</span>
+                <span><img src="sprites/recycle.png" class="icon"> Moves: <b id="memMoves">0</b></span>
+                <span><img src="sprites/checkmark.png" class="icon"> Pairs: <b id="memPairs">0</b>/8</span>
+            </div>
+            <div id="memBoard"></div>
+            <p class="hint">Find the pairs of matching animals. The timer starts on the first card!</p>
+        </div>
+    </section>
+
+    <!-- MINIGAME 3 -->
+    <section id="game3" class="screen">
+        <div class="flood">
+            <div class="rain" id="rain"></div>
+            <div class="topbar">
+                <span><img src="sprites/calendar.png" class="icon"> Day <b id="day">1</b>/40</span>
+                <span><img src="sprites/apple.png" class="icon"> Food <b id="food">0</b></span>
+                <span><img src="sprites/plank.png" class="icon"> Planks <b id="planks3">0</b></span>
+                <span id="deadInfo"></span>
+            </div>
+            <div class="waterbox">
+                <div class="gauge"><div id="waterBar"></div><span id="waterTxt">0%</span></div>
+                <div class="boat" id="boat">
+                    <img src="sprites/FinishedArk.png" class="boat-img">
+                    <div class="hull" id="hull"></div>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="bailBtn" class="big"><img src="sprites/bucket.png" class="icon"> Bail water</button>
+                <button id="fishBtn" class="big"><img src="sprites/fishingrod.png" class="icon"> Fish</button>
+            </div>
+            <p id="msg" class="msg"></p>
+            <p class="hint lane-hint"><img src="sprites/warning.png" class="icon"> Drag the small animals to the <img src="sprites/bucket.png" class="icon"> pen before they reach the lion!</p>
+            <div class="lane" id="lane">
+                <div class="safe"><img src="sprites/bucket.png" class="icon lane-icon"> Safe pen</div>
+                <div class="lionzone"><img src="sprites/lion.png" class="lionzone-img"></div>
+            </div>
+            <div id="animals"></div>
+        </div>
+    </section>
+
+    <!-- TRANSITION / END -->
+    <section id="overlay" class="screen">
+        <div class="card center">
+            <h2 id="ovTitle"></h2>
+            <p id="ovText"></p>
+            <button class="big" id="ovBtn">Continue</button>
+        </div>
+    </section>
+
+    <script src="sounds.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
