@@ -102,6 +102,42 @@ function goHome() {
     show('intro');
 }
 $('stageBadge').onclick = $('homeTitle').onclick = goHome;
+// covers the screen, shows the next stage's name, then switches screens and uncovers it
+const WIPES = {
+    2: { img: 'elephant', title: 'Stage 2', sub: 'The Animals' },
+    3: { img: 'wave', title: 'Stage 3', sub: 'The Flood', bg: 'radial-gradient(circle at center, #4aa3d8, #163a66)' },
+    menu: { img: 'dove', title: 'The End', sub: 'Thanks for playing!', bg: 'radial-gradient(circle at center, #fffaf0, #ecd9ae)', cream: true },
+};
+function stageTransition(key, cb) {
+    const t = WIPES[key], w = $('wipe');
+    $('wipeImg').src = `sprites/${t.img}.png`;
+    $('wipeTitle').textContent = t.title;
+    $('wipeSub').textContent = t.sub;
+    w.style.background = t.bg || '';
+    SFX.play('next');
+    const extra = t.cream ? ' cream' : '';
+    w.className = 'wipe show' + extra;
+    setTimeout(() => w.classList.add('ready'), 450);
+    setTimeout(() => { cb(); w.className = 'wipe hide' + extra; }, 1700);
+    setTimeout(() => { w.className = 'wipe'; }, 2300);
+}
+// DEBUG: press P to finish the current stage instantly (set to false before release)
+const DEBUG_KEYS = true;
+document.addEventListener('keydown', e => {
+    if (!DEBUG_KEYS || e.repeat || e.key.toLowerCase() !== 'p') return;
+    if ($('overlay').classList.contains('active') || $('tutorial').classList.contains('active') || $('wipe').className !== 'wipe') return;
+    if ($('game1').classList.contains('active')) {
+        if (!G1.done) { const need = GOAL - G1.total; G1.planks += need; G1.total += need; endGame1(); updateUI1(); }
+        carriedPlanks = G1.planks; clearTimers(); stageTransition(2, () => goStage(2));
+    } else if ($('game2').classList.contains('active')) {
+        if (M.finished && H.done) return;   // cards are already sliding into the herding phase
+        if (!M.finished) { M.finished = true; M.memTime = M.start ? (performance.now() - M.start) / 1000 : 0; }
+        if (H.done) { H.an = []; H.start = performance.now(); }
+        clearTimers(); herdWin();
+    } else if ($('game3').classList.contains('active')) {
+        if (!W.over) { clearTimers(); win(); }
+    }
+});
 function goStage(n) {
     clearTimers();
     $('stageBadge').innerHTML = I('home') + ' Stage ' + STAGE_NAMES[n];
@@ -248,7 +284,7 @@ function craft(n) {
 $('nextBtn').onclick = () => {
     overlay('Move on to the next stage?',
         `You currently have <b>${fmt(G1.planks)}</b> planks. You can keep chopping and crafting (up to ${fmt(MAX_PLANKS)}) before calling the animals, or confirm now to move on.`,
-        'Confirm · Call the animals', () => { carriedPlanks = G1.planks; goStage(2); },
+        'Confirm · Call the animals', () => { carriedPlanks = G1.planks; clearTimers(); stageTransition(2, () => goStage(2)); },
         'Keep collecting planks', null);
 };
 $('craftBtn').onclick = () => { SFX.play('plank'); craft(Math.max(1, Math.floor(G1.wood / 5))); updateUI1(); };
@@ -522,7 +558,7 @@ function herdWin() {
     confettiBurst();
     setTimeout(() => overlay('All aboard!',
         `Memory: <b>${t.toFixed(1)}s</b> in <b>${M.moves}</b> moves<br>Herding: <b>${ht.toFixed(1)}s</b><br>${stars}<br><br>But the clouds darken… the flood has begun!`,
-        'Face the flood', () => goStage(3)), 700);
+        'Face the flood', () => { clearTimers(); stageTransition(3, () => goStage(3)); }), 700);
 }
 
 /* =========================================================
@@ -730,5 +766,5 @@ function win() {
     overlay(I('dove', 'lg') + ' The dove returned with an olive branch!',
         `You survived 40 days and 40 nights, with ${lostCount()} loss(es) and ${W.saved} little animals saved from the lion.<br>
         <i class="verse">"I do set my bow in the cloud, and it shall be for a token of a covenant between me and the earth." – Genesis 9:13</i>`,
-        'Play again', () => { carriedPlanks = 0; goHome(); });
+        'Back to menu', () => { carriedPlanks = 0; clearTimers(); stageTransition('menu', goHome); });
 }

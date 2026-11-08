@@ -35,6 +35,24 @@ no remote configured as of this writing.
   `btn2Text`/`cb2` are optional — when given, a second "ghost" button appears (e.g. a cancel/decline
   option) that just closes the overlay and runs `cb2` (or nothing) instead of `cb`. Used e.g. so the
   "move to next stage" prompt in minigame 1 can be declined without losing progress.
+- `stageTransition(key, cb)` plays the full-screen **transition between stages** (`#wipe`). A
+  brown circle closes over the screen (`clip-path: circle()`), the name of the next stage appears
+  (`WIPES`: 2 = "The Animals", 3 = "The Flood", `menu` = "The End"), and after ~1.7s it runs `cb`
+  (the actual screen switch) and the circle opens again. It's used only when a stage is **won**:
+  minigame 1 → 2 (confirm), 2 → 3 ("Face the flood"), and at the end of minigame 3. The final
+  button there is **"Back to menu"** (it used to say "Play again"). "Try again" after losing
+  minigame 3, and the menu buttons, switch screens directly, with no transition. `#wipe` has
+  z-index 90: above the overlay (50) and the tutorial (55), below the confetti (100).
+  Each entry in `WIPES` can have its own `bg`. The stage 3 (Flood) transition is **blue**, at the
+  user's request. The final transition ("The End", the `menu` key) is **cream**, with `cream: true`,
+which adds the `.wipe.cream` class so the text turns dark brown. The others use the default brown
+from the CSS.
+- **Debug key P** (`DEBUG_KEYS = true`, just before `goStage` in game.js): pressing P instantly
+  finishes the current stage, as if the player had won it. Minigame 1 fills the planks up to the
+  goal and goes straight to the transition to stage 2. Minigame 2 jumps straight to `herdWin()`
+  (from the memory phase or the herding phase). Minigame 3 calls `win()`. It does nothing while
+  the overlay, the tutorial or a transition is on screen. **Set `DEBUG_KEYS` to `false` before
+  publishing the game.**
 - `confettiBurst(count?)` spawns a short-lived full-viewport confetti animation (plain divs +
   CSS `@keyframes confettiFall`, no library), and plays the cha-ching sound. It's called at the end
   of each of the 3 minigames (in minigame 2, only at the end of the herding phase).
@@ -177,6 +195,8 @@ also have `max-width:none` (no width cap) so they go edge-to-edge.
 - Don't open the browser (`Start-Process Index.html`) after every change. Only do it when the user
   asks. Just report what changed.
 - The user writes in Portuguese (pt-BR). Reply in Portuguese. In-game text is in English.
+- **Always update this file (PROJECT_NOTES.md) when you finish any code change**, without waiting
+  to be asked. Record what was done in the right section and fix anything that became out of date.
 
 ## Things the user has corrected / confirmed in past sessions (don't redo these)
 - Screens should fill the viewport (not a small centered 1100px box) — but see the minigame-1
