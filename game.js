@@ -1,4 +1,5 @@
 'use strict';
+document.addEventListener('dragstart', e => e.preventDefault());
 const $ = id => document.getElementById(id);
 const rnd = (a, b) => a + Math.random() * (b - a);
 const fmt = n => Math.floor(n).toLocaleString('en-US');
@@ -22,6 +23,7 @@ const TUTORIAL = {
         { pose: 'happy', text: "The ark is built! Now God said to bring the animals aboard, two by two, male and female of every kind." },
         { pose: 'neutral', text: '"And they went in unto Noah into the ark, two and two." — Genesis 7:9' },
         { pose: 'happy', text: "Find the matching pairs of animals as fast as you can. The storm clouds are gathering!" },
+        { pose: 'thinking', text: "Then lead the pairs into the pen. Point at the animals (or touch near them) and they'll walk away from you. Each pair goes into the pen with its picture, and the gate closes behind them!" },
     ],
     3: [
         { pose: 'thinking', text: "The rain has begun. God said it would last 40 days and 40 nights, covering the whole earth." },
@@ -58,12 +60,39 @@ function show(id) {
     $(id).classList.add('active');
 }
 function clearTimers() { timers.forEach(clearInterval); timers = []; SFX.ambientOff(); }
-function overlay(title, text, btnText, cb) {
+function overlay(title, text, btnText, cb, btn2Text, cb2) {
     $('ovTitle').innerHTML = title;
     $('ovText').innerHTML = text;
     $('ovBtn').textContent = btnText;
     $('ovBtn').onclick = () => { SFX.play('confirm'); $('overlay').classList.remove('active'); cb(); };
+    const b2 = $('ovBtn2');
+    if (btn2Text) {
+        b2.textContent = btn2Text;
+        b2.style.display = '';
+        b2.onclick = () => { SFX.play('next'); $('overlay').classList.remove('active'); if (cb2) cb2(); };
+    } else {
+        b2.style.display = 'none';
+        b2.onclick = null;
+    }
     $('overlay').classList.add('active');
+}
+function confettiBurst(count) {
+    count = count || 120;
+    SFX.play('cashRegister');
+    const colors = ['#e85a3c', '#f7c948', '#6cc04a', '#4aa3d8', '#b8651a', '#8a5a2b', '#fff8e6'];
+    const layer = document.createElement('div');
+    layer.className = 'confetti-layer';
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('i');
+        p.style.left = Math.random() * 100 + '%';
+        p.style.background = colors[Math.floor(Math.random() * colors.length)];
+        p.style.animationDelay = (Math.random() * 0.4) + 's';
+        p.style.animationDuration = (2 + Math.random() * 1.4) + 's';
+        p.style.transform = `rotate(${Math.random() * 360}deg)`;
+        layer.appendChild(p);
+    }
+    document.body.appendChild(layer);
+    setTimeout(() => layer.remove(), 3600);
 }
 function goHome() {
     clearTimers();
@@ -217,10 +246,10 @@ function craft(n) {
     if (G1.total >= GOAL && !G1.done) endGame1();
 }
 $('nextBtn').onclick = () => {
-    carriedPlanks = G1.planks;
-    overlay('The Ark is built! ' + I('ark', 'lg'),
-        `You will take ${fmt(G1.planks)} planks to the flood. Now the animals must board the ark, two by two.`,
-        'Call the animals', () => goStage(2));
+    overlay('Move on to the next stage?',
+        `You currently have <b>${fmt(G1.planks)}</b> planks. You can keep chopping and crafting (up to ${fmt(MAX_PLANKS)}) before calling the animals, or confirm now to move on.`,
+        'Confirm · Call the animals', () => { carriedPlanks = G1.planks; goStage(2); },
+        'Keep collecting planks', null);
 };
 $('craftBtn').onclick = () => { SFX.play('plank'); craft(Math.max(1, Math.floor(G1.wood / 5))); updateUI1(); };
 
@@ -228,7 +257,7 @@ function buildUpgrades() {
     $('upgrades').innerHTML = '';
     UPGRADES.forEach(u => {
         const d = document.createElement('div'); d.className = 'upg';
-        d.innerHTML = `<div><b id="t_${u.id}" class="upg-title">${I(u.icon)} ${u.name}</b><small id="d_${u.id}"></small></div><div class="upg-btns"><button id="b_${u.id}"></button><button id="bm_${u.id}" class="upg-max">Max</button></div>`;
+        d.innerHTML = `<div><b id="t_${u.id}" class="upg-title">${I(u.icon)} ${u.name}</b></div><div class="upg-btns"><button id="b_${u.id}"></button><button id="bm_${u.id}" class="upg-max">Max</button></div>`;
         $('upgrades').appendChild(d);
         const buy = () => {
             if (!isMax(u) && G1.wood >= cost(u)) { SFX.play('upgrade'); G1.wood -= cost(u); G1.lv[u.id]++; updateUI1(); }
@@ -251,10 +280,9 @@ function updateUI1() {
     $('goalTxt').innerHTML = `${fmt(G1.total)} / ${GOAL} planks (limit ${MAX_PLANKS})` + (G1.done ? ' – Goal reached! ' + I('confetti') : '');
     UPGRADES.forEach(u => {
         const maxed = isMax(u);
-        $('d_' + u.id).textContent = maxed ? u.desc(G1.lv[u.id]) + ' · MAX' : u.desc(G1.lv[u.id]);
         const b = $('b_' + u.id);
         if (maxed) { b.textContent = 'MAX'; b.disabled = true; }
-        else { b.innerHTML = fmt(cost(u)) + ' ' + I('log'); b.disabled = G1.wood < cost(u); }
+        else { b.textContent = fmt(cost(u)); b.disabled = G1.wood < cost(u); }
         const bm = $('bm_' + u.id);
         if (maxed) { bm.style.display = 'none'; }
         else {
@@ -268,16 +296,24 @@ function updateUI1() {
 function endGame1() {
     G1.done = true;
     $('nextBtn').style.display = 'block';
+    confettiBurst();
 }
 
 /* =========================================================
    MINIGAME 2 – MEMORY
    ========================================================= */
 const ANIMALS = ['elephant', 'lion', 'sheep', 'camel', 'turtle', 'giraffe', 'rabbit', 'owl'];
+const MEM_TITLE = 'The animals arrive two by two';
+const MEM_HINT = 'Find the pairs of matching animals. The timer starts on the first card!';
 const M = {};
 function startGame2() {
     SFX.grassOn();
-    Object.assign(M, { first: null, lock: false, moves: 0, pairs: 0, start: 0, finished: false });
+    Object.assign(M, { first: null, lock: false, moves: 0, pairs: 0, start: 0, finished: false, memTime: 0 });
+    H.done = true;
+    $('memBoard').style.display = '';
+    $('herd').style.display = 'none'; $('herd').classList.remove('slide-in');
+    $('memStats').style.display = '';
+    $('memTitle').textContent = MEM_TITLE; $('memHint').textContent = MEM_HINT;
     const deck = [...ANIMALS, ...ANIMALS];
     for (let i = deck.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [deck[i], deck[k]] = [deck[k], deck[i]]; }
     const board = $('memBoard'); board.innerHTML = '';
@@ -312,12 +348,180 @@ function flipCard(c) {
 }
 function endGame2() {
     M.finished = true;
-    const t = (performance.now() - M.start) / 1000;
-    $('memTime').textContent = t.toFixed(1);
-    const sc = t < 40 ? 3 : t < 70 ? 2 : 1;
-    const stars = I('star').repeat(sc);
+    M.memTime = (performance.now() - M.start) / 1000;
+    $('memTime').textContent = M.memTime.toFixed(1);
+    setTimeout(() => {
+        SFX.play('next');
+        document.querySelectorAll('#memBoard .mcard').forEach((c, i) => {
+            c.style.transitionDelay = ((i % 4) * 0.06 + Math.floor(i / 4) * 0.03) + 's';
+            c.classList.add('slide-out');
+        });
+        setTimeout(() => {
+            if (!$('game2').classList.contains('active')) return;
+            $('memBoard').style.display = 'none';
+            $('memStats').style.display = 'none';
+            $('memTitle').textContent = 'Lead the pairs into the pen';
+            $('memHint').textContent = 'Point at the animals (or touch near them) to push them away. Lead each pair into the pen with its picture. The gate closes when both are inside!';
+            const h = $('herd');
+            h.style.display = '';
+            h.classList.remove('slide-in'); void h.offsetWidth; h.classList.add('slide-in');
+            startHerd();
+        }, 900);
+    }, 600);
+}
+
+/* ---------- herding phase: push each pair into its own pen ---------- */
+// faces: which way the sprite looks (1 = right, -1 = left); tall: height relative to the base size
+const HERD_KINDS = [
+    { img: 'sheep', faces: 1, speed: 150, tall: 0.8 },
+    { img: 'rabbit', faces: -1, speed: 230, tall: 0.8 },
+    { img: 'camel', faces: 1, speed: 130, tall: 1.05 },
+    { img: 'giraffe', faces: -1, speed: 140, tall: 1.35 },
+];
+// pens as fractions of the field; the gate always faces the middle of the field
+const PENS = [
+    { x1: 0.03, x2: 0.24, y1: 0.06, y2: 0.45, gate: 'right' },
+    { x1: 0.03, x2: 0.24, y1: 0.55, y2: 0.94, gate: 'right' },
+    { x1: 0.76, x2: 0.97, y1: 0.06, y2: 0.45, gate: 'left' },
+    { x1: 0.76, x2: 0.97, y1: 0.55, y2: 0.94, gate: 'left' },
+];
+const H = { done: true };
+
+function startHerd() {
+    const field = $('herd');
+    field.querySelectorAll('.herd-an, .pen').forEach(e => e.remove());
+    const w = field.clientWidth, h = field.clientHeight;
+    const kinds = [...HERD_KINDS].sort(() => Math.random() - 0.5);
+    Object.assign(H, { an: [], pens: [], pointer: null, done: false, start: performance.now(), last: performance.now(), winTime: 0 });
+    PENS.forEach((p, i) => {
+        const el = document.createElement('div');
+        el.className = 'pen gate-' + p.gate;
+        Object.assign(el.style, { left: p.x1 * 100 + '%', top: p.y1 * 100 + '%', width: (p.x2 - p.x1) * 100 + '%', height: (p.y2 - p.y1) * 100 + '%' });
+        el.innerHTML = `<img src="sprites/${kinds[i].img}.png" class="pen-sign"><i class="pa"></i><i class="pg"></i><i class="pb"></i>`;
+        field.appendChild(el);
+        H.pens.push({ ...p, kind: kinds[i], el, closed: false });
+    });
+    HERD_KINDS.forEach(k => {
+        for (let n = 0; n < 2; n++) {
+            const el = document.createElement('div'); el.className = 'herd-an';
+            el.innerHTML = `<img src="sprites/${k.img}.png">`;
+            field.appendChild(el);
+            H.an.push({ k, el, x: rnd(0.34, 0.66) * w, y: rnd(0.12, 0.88) * h, vx: 0, vy: 0 });
+        }
+    });
+    timers.push(setInterval(herdTick, 16));
+}
+
+(() => {
+    const field = $('herd'), cur = $('herdCursor');
+    const point = e => {
+        const r = field.getBoundingClientRect();
+        H.pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+        cur.style.display = 'block';
+        cur.style.left = H.pointer.x + 'px'; cur.style.top = H.pointer.y + 'px';
+    };
+    const release = () => { H.pointer = null; cur.style.display = 'none'; };
+    field.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') field.releasePointerCapture?.(e.pointerId); point(e); });
+    field.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) point(e); });
+    field.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') release(); });
+    field.addEventListener('pointercancel', release);
+    field.addEventListener('pointerleave', release);
+})();
+
+// fence segments of a pen in pixels: [x1, y1, x2, y2]; the gate gap is the middle half of the gate side
+function penWalls(p, w, h) {
+    const x1 = p.x1 * w, x2 = p.x2 * w, y1 = p.y1 * h, y2 = p.y2 * h, q = (y2 - y1) / 4;
+    const gx = p.gate === 'right' ? x2 : x1, bx = p.gate === 'right' ? x1 : x2;
+    const walls = [[x1, y1, x2, y1], [x1, y2, x2, y2], [bx, y1, bx, y2], [gx, y1, gx, y1 + q], [gx, y2 - q, gx, y2]];
+    if (p.closed) walls.push([gx, y1 + q, gx, y2 - q]);
+    return walls;
+}
+
+// pushes an animal (a circle of radius r) out of a fence segment
+function collideWall(a, ox, oy, s, r) {
+    const cx = Math.min(Math.max(a.x, Math.min(s[0], s[2])), Math.max(s[0], s[2]));
+    const cy = Math.min(Math.max(a.y, Math.min(s[1], s[3])), Math.max(s[1], s[3]));
+    let dx = a.x - cx, dy = a.y - cy, d = Math.hypot(dx, dy);
+    if (d >= r) return;
+    if (d < 0.01) { dx = ox - cx; dy = oy - cy; d = Math.hypot(dx, dy) || 1; if (d < 0.01) { dx = 1; dy = 0; d = 1; } }
+    const nx = dx / d, ny = dy / d;
+    a.x = cx + nx * r; a.y = cy + ny * r;
+    const vn = a.vx * nx + a.vy * ny;
+    if (vn < 0) { a.vx -= vn * nx; a.vy -= vn * ny; }
+}
+
+function herdTick() {
+    if (H.done) return;
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - H.last) / 1000); H.last = now;
+    const field = $('herd');
+    const w = field.clientWidth, h = field.clientHeight;
+    const size = Math.max(34, Math.min(62, w * 0.065)), rad = size * 0.4, reach = size * 2.6;
+    const cur = $('herdCursor');
+    cur.style.width = cur.style.height = reach * 2 + 'px';
+    const inPen = (a, p) => a.x > p.x1 * w + rad * 0.5 && a.x < p.x2 * w - rad * 0.5 && a.y > p.y1 * h + rad * 0.5 && a.y < p.y2 * h - rad * 0.5;
+    const walls = H.pens.flatMap(p => penWalls(p, w, h));
+    const inside = a => H.pens.some(p => p.kind === a.k && inPen(a, p));
+
+    H.an.forEach(a => {
+        let ax = 0, ay = 0;
+        if (H.pointer) {
+            const dx = a.x - H.pointer.x, dy = a.y - H.pointer.y, d = Math.hypot(dx, dy) || 1;
+            if (d < reach) { const f = (1 - d / reach) * a.k.speed * 9; ax += dx / d * f; ay += dy / d * f; }
+        }
+        H.an.forEach(b => {
+            if (b === a) return;
+            const dx = a.x - b.x, dy = a.y - b.y, d = Math.hypot(dx, dy) || 1;
+            if (d < rad * 2) { ax += dx / d * 700; ay += dy / d * 700; }
+        });
+        // idle animals wander a little, unless they're already in their own pen
+        if (!H.pointer && !inside(a) && Math.random() < dt * 0.6) {
+            a.vx += rnd(-30, 30); a.vy += rnd(-30, 30);
+        }
+        a.vx += ax * dt; a.vy += ay * dt;
+        const sp = Math.hypot(a.vx, a.vy);
+        if (sp > a.k.speed) { a.vx *= a.k.speed / sp; a.vy *= a.k.speed / sp; }
+        const fr = Math.pow(0.05, dt); a.vx *= fr; a.vy *= fr;
+
+        const ox = a.x, oy = a.y;
+        a.x += a.vx * dt; a.y += a.vy * dt;
+        if (a.x < rad) { a.x = rad; a.vx = Math.max(0, a.vx); }
+        if (a.x > w - rad) { a.x = w - rad; a.vx = Math.min(0, a.vx); }
+        if (a.y < rad) { a.y = rad; a.vy = Math.max(0, a.vy); }
+        if (a.y > h - rad) { a.y = h - rad; a.vy = Math.min(0, a.vy); }
+        walls.forEach(s => collideWall(a, ox, oy, s, rad));
+
+        a.el.style.height = size * a.k.tall + 'px';
+        a.el.style.transform = `translate(${a.x}px, ${a.y}px)`;
+        a.el.classList.toggle('walk', Math.hypot(a.vx, a.vy) > 15);
+        if (Math.abs(a.vx) > 8) a.el.classList.toggle('flip', Math.sign(a.vx) !== a.k.faces);
+    });
+
+    // a pen closes its gate once its own pair (and nobody else) is inside
+    H.pens.forEach(p => {
+        if (p.closed) return;
+        const inside = H.an.filter(a => inPen(a, p));
+        if (inside.length === 2 && inside.every(a => a.k === p.kind)) {
+            p.closed = true;
+            p.el.classList.add('closed');
+            SFX.play('match');
+        }
+    });
+    if (H.pens.every(p => p.closed)) {
+        H.winTime += dt;
+        if (H.winTime > 0.5) herdWin();
+    }
+}
+
+function herdWin() {
+    H.done = true;
+    H.an.forEach(a => a.el.classList.remove('walk'));
+    $('herdCursor').style.display = 'none';
+    const t = M.memTime, ht = (performance.now() - H.start) / 1000;
+    const stars = I('star').repeat(t < 40 ? 3 : t < 70 ? 2 : 1);
+    confettiBurst();
     setTimeout(() => overlay('All aboard!',
-        `Time: <b>${t.toFixed(1)}s</b> in <b>${M.moves}</b> moves<br>${stars}<br><br>But the clouds darken… the flood has begun!`,
+        `Memory: <b>${t.toFixed(1)}s</b> in <b>${M.moves}</b> moves<br>Herding: <b>${ht.toFixed(1)}s</b><br>${stars}<br><br>But the clouds darken… the flood has begun!`,
         'Face the flood', () => goStage(3)), 700);
 }
 
@@ -339,7 +543,7 @@ const W = {};
 function startGame3() {
     Object.assign(W, {
         day: 1, t: 0, water: 5, food: 30, planks: carriedPlanks || 300, fishCd: 0, over: false,
-        leaks: LEAK_ALL.map(() => false), waveSent: false, finalLeaks: false, sinkTimer: 0,
+        leaks: LEAK_ALL.map(() => false), finalLeaks: false, sinkTimer: 0,
         an: FARM.map(f => ({ ...f, hunger: 100, dead: false })),
         crit: [], spawn: 3, eaten: 0, saved: 0,
     });
@@ -358,7 +562,7 @@ function startGame3() {
     LEAK_ALL.forEach((x, i) => {
         const b = document.createElement('button'); b.className = 'leak';
         b.innerHTML = '<img src="sprites/waterdrop.png" class="leak-img">';
-        b.style.left = `calc(${x}% - 19px)`; b.style.top = (i % 2 ? 170 : 120) + 'px'; b.style.display = 'none';
+        b.style.left = x + '%'; b.style.top = (i % 2 ? 64 : 47) + '%'; b.style.display = 'none';
         b.onclick = () => repair(i);
         hull.appendChild(b);
     });
@@ -465,12 +669,6 @@ function tick3(dt) {
     W.t += dt;
     if (W.fishCd > 0) W.fishCd = Math.max(0, W.fishCd - dt);
     if (W.t >= DAY_LEN) { W.t -= DAY_LEN; W.day++; }
-    // night 20: three small animals come out at the same time
-    if (W.day === 20 && !W.waveSent && !W.laneOff) {
-        W.waveSent = true;
-        for (let k = 0; k < 3; k++) spawnCritter();
-        say('Three little animals are running down the lane at once!');
-    }
     // night 40: four extra holes open in the hull
     if (W.day === DAYS && !W.finalLeaks) {
         W.finalLeaks = true;
@@ -528,6 +726,7 @@ function lose(txt) {
 }
 function win() {
     W.over = true; SFX.rainOff();
+    confettiBurst(200);
     overlay(I('dove', 'lg') + ' The dove returned with an olive branch!',
         `You survived 40 days and 40 nights, with ${lostCount()} loss(es) and ${W.saved} little animals saved from the lion.<br>
         <i class="verse">"I do set my bow in the cloud, and it shall be for a token of a covenant between me and the earth." – Genesis 9:13</i>`,

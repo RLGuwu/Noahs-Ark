@@ -80,14 +80,19 @@
     <!-- MINIGAME 2 -->
     <section id="game2" class="screen">
         <div class="card center wide">
-            <h2>The animals arrive two by two</h2>
-            <div class="stats">
+            <div class="g2-header">
+            <h2 id="memTitle">The animals arrive two by two</h2>
+            <div class="stats" id="memStats">
                 <span><img src="sprites/stopwatch.png" class="icon"> <b id="memTime">0.0</b>s</span>
                 <span><img src="sprites/recycle.png" class="icon"> Moves: <b id="memMoves">0</b></span>
                 <span><img src="sprites/checkmark.png" class="icon"> Pairs: <b id="memPairs">0</b>/8</span>
             </div>
+            </div>
             <div id="memBoard"></div>
-            <p class="hint">Find the pairs of matching animals. The timer starts on the first card!</p>
+            <div id="herd" class="herd" style="display:none">
+                <div class="herd-cursor" id="herdCursor"></div>
+            </div>
+            <p class="hint" id="memHint">Find the pairs of matching animals. The timer starts on the first card!</p>
         </div>
     </section>
 
@@ -127,7 +132,10 @@
         <div class="card center">
             <h2 id="ovTitle"></h2>
             <p id="ovText"></p>
-            <button class="big" id="ovBtn">Continue</button>
+            <div class="ov-btns">
+                <button class="big" id="ovBtn">Continue</button>
+                <button class="big ghost" id="ovBtn2" style="display:none"></button>
+            </div>
         </div>
     </section>
 

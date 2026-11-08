@@ -180,6 +180,14 @@ const SFX = (() => {
             tone(c, { freq: 500, freq2: 250, dur: 0.2, vol: 0.3 });
             swish(c, 2000, 800, 0.15, 0.2);
         },
+        // win a minigame: classic cash-register "cha-ching"
+        cashRegister(c) {
+            tone(c, { freq: 1400, type: 'square', dur: 0.05, vol: 0.18 });
+            tone(c, { freq: 1050, type: 'square', start: 0.05, dur: 0.09, vol: 0.2 });
+            [2100, 2500, 3150, 2800].forEach((f, i) =>
+                tone(c, { freq: f, type: 'sine', start: 0.1 + i * 0.05, dur: 0.14, vol: 0.1 }));
+            tone(c, { freq: 1047, freq2: 1568, type: 'triangle', start: 0.12, dur: 0.4, vol: 0.22 });
+        },
     };
 
     return {
