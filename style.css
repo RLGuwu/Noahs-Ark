@@ -1,20 +1,25 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 body {
     font-family: 'Arial Rounded MT Bold', 'Arial Rounded MT', Arial, sans-serif;
     background: linear-gradient(#f6e7c1, #e8c98a);
     color: #3b2a14;
     min-height: 100vh;
     user-select: none;
+    display: flex;
+    flex-direction: column;
 }
 header {
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 20px; background: #6b4423; color: #fff3d6;
     box-shadow: 0 3px 8px rgba(0,0,0,.3);
+    flex-shrink: 0;
 }
 header h1 { font-size: 1.4rem; }
 #stageBadge { font-weight: 600; }
 .screen { display: none; padding: 16px; max-width: 1100px; margin: 0 auto; }
-.screen.active { display: block; }
+.screen.active { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
+#game1.screen, #game2.screen, #game3.screen { max-width: none; }
 body:has(#game1.active) { background: url("Imagens/Fundo.jpg") center / cover no-repeat fixed; }
 body:has(#game3.active) { background: url("Imagens/Fundo3.jpg") center / cover no-repeat fixed; }
 body:has(#game2.active) { background: url("Imagens/Fundo4.jpg") center / cover no-repeat fixed; }
@@ -24,6 +29,7 @@ body:has(#intro.active)::before { content: ""; position: fixed; inset: -20px; z-
 .card { background: #fff8e6; border: 3px solid #6b4423; border-radius: 16px; padding: 24px; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
 .card.center { text-align: center; max-width: 560px; margin: 30px auto; }
 .card.wide { max-width: 640px; }
+#game2 .card.wide { max-width: none; width: 100%; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .card p, .card h2 { margin-bottom: 12px; }
 .verse { font-style: italic; color: #8a5a2b; font-size: 1.1rem; }
 .steps { text-align: left; margin: 12px auto 20px; max-width: 440px; line-height: 1.8; }
@@ -43,8 +49,9 @@ button.big { font-size: 1.05rem; padding: 12px 20px; }
 .icon.lg { height: 2em; }
 
 /* Game 1 */
-.layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+.layout { display: grid; grid-template-columns: 1fr 360px; gap: 16px; flex: 1 1 auto; min-height: 0; width: 100%; }
 @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+@media (min-width: 861px) { .layout { grid-template-rows: 1fr; max-height: 600px; } #map { height: 100%; aspect-ratio: auto; } }
 #map {
     position: relative; width: 100%; aspect-ratio: 3/2;
     background: url("Imagens/Fundo2.jpg") center / cover no-repeat, #7cc276;
@@ -74,6 +81,7 @@ button.big { font-size: 1.05rem; padding: 12px 20px; }
 .panel h3 { margin-bottom: 6px; }
 .upg { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px dashed #c9a96b; font-size: .85rem; }
 .upg small { color: #7a5a35; display: block; }
+.upg-title { cursor: pointer; }
 .upg button { white-space: nowrap; padding: 6px 10px; }
 .upg-btns { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
 .upg-max { background: #a0cf8a; border-color: #3b7a2e; font-size: .78rem; padding: 4px 8px; }
@@ -81,7 +89,8 @@ button.big { font-size: 1.05rem; padding: 12px 20px; }
 
 /* Game 2 */
 .stats { display: flex; justify-content: center; gap: 20px; margin-bottom: 14px; font-size: 1.05rem; }
-#memBoard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 460px; margin: 0 auto; }
+#memBoard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 460px; margin: 0 auto; }
+#game2 #memBoard { max-width: 600px; gap: 14px; margin: auto; }
 .mcard { aspect-ratio: 1; perspective: 600px; cursor: pointer; }
 .mcard .in { position: relative; width: 100%; height: 100%; transition: transform .4s; transform-style: preserve-3d; }
 .mcard.flip .in, .mcard.done .in { transform: rotateY(180deg); }
@@ -93,17 +102,17 @@ button.big { font-size: 1.05rem; padding: 12px 20px; }
 .mcard.done .f { background: #d7f5c9; border-color: #4b9a2e; }
 
 /* Game 3 */
-.flood { position: relative; background: linear-gradient(#5b6b7c, #8697a8 50%, #3a6f94); border-radius: 16px; padding: 12px; overflow: hidden; border: 4px solid #2c3e50; min-height: 620px; color: #fff; }
+.flood { position: relative; background: linear-gradient(#5b6b7c, #8697a8 50%, #3a6f94); border-radius: 16px; padding: 12px; overflow: hidden; border: 4px solid #2c3e50; color: #fff; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
 .rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .rain i { position: absolute; top: -20px; width: 2px; height: 18px; background: #cfe8ffaa; animation: fall linear infinite; }
 @keyframes fall { to { transform: translateY(700px); } }
 .topbar { position: relative; display: flex; flex-wrap: wrap; gap: 18px; justify-content: space-between; background: #0006; padding: 8px 14px; border-radius: 10px; font-size: 1.05rem; z-index: 2; }
-.waterbox { position: relative; display: flex; gap: 16px; align-items: flex-end; justify-content: center; margin: 24px 0 10px; z-index: 2; }
-.gauge { position: relative; width: 42px; height: 180px; background: #0006; border: 3px solid #fff8; border-radius: 10px; overflow: hidden; display: flex; align-items: flex-end; }
+.waterbox { position: relative; display: flex; gap: 16px; align-items: flex-end; justify-content: center; margin: 24px 0 10px; z-index: 2; flex: 1 1 auto; min-height: 0; }
+.gauge { position: relative; width: 44px; height: 200px; background: #0006; border: 3px solid #fff8; border-radius: 10px; overflow: hidden; display: flex; align-items: flex-end; }
 #waterBar { width: 100%; height: 0; background: linear-gradient(#4fc3f7, #0277bd); transition: height .2s; }
 #waterBar.danger { background: linear-gradient(#ff8a65, #d84315); }
 #waterTxt { position: absolute; top: 50%; width: 100%; text-align: center; font-size: .8rem; font-weight: 700; text-shadow: 0 1px 2px #000; }
-.boat { position: relative; width: min(480px, 80%); animation: bob 3s ease-in-out infinite; }
+.boat { position: relative; width: min(560px, 78%); animation: bob 3s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(8px) rotate(1deg); } 0%,100% { transform: translateY(0) rotate(-1deg); } }
 .boat-img { display: block; width: 100%; height: auto; }
 .hull { position: absolute; inset: 0; pointer-events: none; }
@@ -114,10 +123,13 @@ button.big { font-size: 1.05rem; padding: 12px 20px; }
 @keyframes pulse { to { transform: scale(1.18); } }
 .actions { position: relative; display: flex; gap: 12px; justify-content: center; margin: 14px 0 6px; z-index: 2; }
 .msg { position: relative; text-align: center; min-height: 22px; font-size: .9rem; z-index: 2; }
-#animals { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; z-index: 2; }
+#animals { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 12px; margin-top: 10px; z-index: 2; }
 .an { background: #fff8e6; color: #3b2a14; border: 3px solid #6b4423; border-radius: 12px; padding: 8px 4px; text-align: center; cursor: pointer; transition: transform .08s; }
 .an:active { transform: scale(.95); }
-.an .e { display: flex; align-items: center; justify-content: center; height: 60px; }
+.an .e { position: relative; display: flex; align-items: center; justify-content: center; height: 60px; }
+.feed-float { position: absolute; top: 4px; left: 50%; transform: translate(-50%, 0); font-weight: 700; color: #ffd54a; text-shadow: 0 1px 3px #000; pointer-events: none; animation: feedUp .9s forwards; z-index: 5; display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+.feed-float .icon { height: 1.1em; }
+@keyframes feedUp { to { transform: translate(-50%, -46px); opacity: 0; } }
 .animal-img { height: 55px; width: auto; object-fit: contain; }
 .an .hb { height: 10px; background: #d9c9a0; border-radius: 5px; overflow: hidden; margin: 4px 8px 0; }
 .an .hb i { display: block; height: 100%; background: #6cc04a; }
@@ -203,7 +215,7 @@ header h1 { cursor: pointer; }
     .card { padding: 16px; }
 
     /* Game 3 */
-    .flood { padding: 8px; min-height: auto; border-radius: 12px; }
+    .flood { padding: 8px; border-radius: 12px; }
     .topbar { gap: 8px 14px; font-size: .9rem; padding: 6px 10px; justify-content: center; }
     .gauge { height: 140px; width: 36px; }
     .boat { width: min(400px, 75%); }

@@ -228,11 +228,13 @@ function buildUpgrades() {
     $('upgrades').innerHTML = '';
     UPGRADES.forEach(u => {
         const d = document.createElement('div'); d.className = 'upg';
-        d.innerHTML = `<div><b>${I(u.icon)} ${u.name}</b><small id="d_${u.id}"></small></div><div class="upg-btns"><button id="b_${u.id}"></button><button id="bm_${u.id}" class="upg-max">Max</button></div>`;
+        d.innerHTML = `<div><b id="t_${u.id}" class="upg-title">${I(u.icon)} ${u.name}</b><small id="d_${u.id}"></small></div><div class="upg-btns"><button id="b_${u.id}"></button><button id="bm_${u.id}" class="upg-max">Max</button></div>`;
         $('upgrades').appendChild(d);
-        $('b_' + u.id).onclick = () => {
+        const buy = () => {
             if (!isMax(u) && G1.wood >= cost(u)) { SFX.play('upgrade'); G1.wood -= cost(u); G1.lv[u.id]++; updateUI1(); }
         };
+        $('b_' + u.id).onclick = buy;
+        $('t_' + u.id).onclick = buy;
         $('bm_' + u.id).onclick = () => buyMax(u);
     });
 }
@@ -447,6 +449,16 @@ function feed(i) {
     if (W.food < FEED_COST) return say('No food! Go fishing ' + I('fishingrod'));
     if (a.hunger > 90) return say(a.name + ' is not hungry.');
     W.food -= FEED_COST; a.hunger = Math.min(100, a.hunger + FEED_GAIN); draw3();
+    floatFeed(i, FEED_COST);
+}
+function floatFeed(i, amount) {
+    const e = document.querySelector('#an' + i + ' .e');
+    if (!e) return;
+    const f = document.createElement('div');
+    f.className = 'feed-float';
+    f.innerHTML = '-' + amount + ' ' + I('apple');
+    e.appendChild(f);
+    setTimeout(() => f.remove(), 900);
 }
 function tick3(dt) {
     if (W.over) return;
