@@ -104,7 +104,8 @@ function goHome() {
 $('stageBadge').onclick = $('homeTitle').onclick = goHome;
 // covers the screen, shows the next stage's name, then switches screens and uncovers it
 const WIPES = {
-    2: { img: 'elephant', title: 'Stage 2', sub: 'The Animals' },
+    1: { img: 'axe', title: 'Stage 1', sub: 'Building the Ark', bg: 'radial-gradient(circle at center, #6fbf5a, #24561f)' },
+    2:{ img: 'elephant', title: 'Stage 2', sub: 'The Animals' },
     3: { img: 'wave', title: 'Stage 3', sub: 'The Flood', bg: 'radial-gradient(circle at center, #4aa3d8, #163a66)' },
     menu: { img: 'dove', title: 'The End', sub: 'Thanks for playing!', bg: 'radial-gradient(circle at center, #fffaf0, #ecd9ae)', cream: true },
 };
@@ -147,7 +148,10 @@ function goStage(n) {
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
     storyMode = !b.dataset.direct;
     if (b.dataset.go === '1' && storyMode) carriedPlanks = 0;
-    goStage(+b.dataset.go);
+    if (b.dataset.go === '1') {
+        if ($('wipe').className !== 'wipe') return;
+        stageTransition(1, () => goStage(1));
+    } else goStage(+b.dataset.go);
 });
 
 /* =========================================================
@@ -165,11 +169,16 @@ const UPGRADES = [
 
 function startGame1() {
     SFX.windOn();
-    Object.assign(G1, { wood: 0, planks: 0, total: 0, lv: {}, sawAcc: 0, trees: [] });
+    Object.assign(G1, { wood: 0, planks: 0, total: 0, lv: {}, sawAcc: 0, trees: [], workers: [] });
     UPGRADES.forEach(u => G1.lv[u.id] = 0);
     G1.done = false;
     $('nextBtn').style.display = 'none';
     buildMap();
+    let wLast = performance.now();
+    timers.push(setInterval(() => {
+        const now = performance.now(), dt = Math.min((now - wLast) / 1000, 0.1); wLast = now;
+        tickWorkers(dt);
+    }, 33));
     buildUpgrades();
     updateUI1();
     let last = performance.now();
@@ -269,6 +278,78 @@ function damageTree(t, dmg, e) {
         const hpEl = t.el.querySelector('.hp i'); if (hpEl) hpEl.style.width = t.hp * 20 + '%';
     }
 }
+/* ---------- little helpers walking around the map (visual only; income comes from wps) ---------- */
+const WORKER_SPRITES = { worker: [1, 2, 3, 4, 5, 6], crew: [7, 8, 9] };
+const WORKER_SHOW_MAX = 6;   // per upgrade, so the map doesn't get crowded
+function syncWorkers() {
+    if (!G1.workers) return;
+    ['worker', 'crew'].forEach(kind => {
+        const want = Math.min(G1.lv[kind], WORKER_SHOW_MAX);
+        const have = G1.workers.filter(w => w.kind === kind).length;
+        for (let i = have; i < want; i++) spawnWorker(kind, i);
+    });
+}
+function spawnWorker(kind, i) {
+    const pool = WORKER_SPRITES[kind];
+    const el = document.createElement('div');
+    el.className = 'worker spawn';
+    el.innerHTML = `<img src="sprites/worker${pool[i % pool.length]}.png" class="worker-img">`;
+    const w = { kind, el, x: rnd(10, 90), y: rnd(20, 92), tx: 0, ty: 0, wait: 0, chopT: 0, side: 1, tree: null, flip: false };
+    el.onpointerdown = e => {
+        e.stopPropagation();
+        SFX.play('workerHi');
+        el.classList.remove('spawn', 'hop'); void el.offsetWidth; el.classList.add('hop');
+        floatText(e, I('star'));
+    };
+    $('map').appendChild(el);
+    G1.workers.push(w);
+    pickTree(w);
+    placeWorker(w);
+    setTimeout(() => el.classList.remove('spawn'), 500);
+}
+// walk to a random tree and stand beside it
+function pickTree(w) {
+    const t = G1.trees[Math.floor(Math.random() * G1.trees.length)];
+    w.tree = t;
+    w.side = Math.random() < 0.5 ? -1 : 1;
+    w.tx = Math.min(96, Math.max(4, t.x + w.side * 4));
+    w.ty = Math.min(96, Math.max(10, t.y + 5));
+}
+function placeWorker(w) {
+    w.el.style.left = w.x + '%';
+    w.el.style.top = w.y + '%';
+    w.el.style.zIndex = 2 + Math.round(w.y);
+    w.el.classList.toggle('flip', w.flip);
+}
+function tickWorkers(dt) {
+    if (!G1.workers) return;
+    G1.workers.forEach(w => {
+        if (w.wait > 0) {
+            w.wait -= dt;
+            w.chopT -= dt;
+            const moved = Math.abs(Math.min(96, Math.max(4, w.tree.x + w.side * 4)) - w.tx) > 0.01;
+            if (w.wait <= 0 || moved) { w.wait = 0; w.el.classList.remove('chop'); pickTree(w); }
+            else if (w.chopT <= 0) {
+                w.chopT = 0.45;
+                w.tree.el.classList.add('hit'); setTimeout(() => w.tree.el.classList.remove('hit'), 150);
+            }
+            return;
+        }
+        const dx = w.tx - w.x, dy = w.ty - w.y, d = Math.hypot(dx * 1.5, dy), step = 11 * dt;
+        if (d <= step) {
+            w.x = w.tx; w.y = w.ty;
+            w.wait = rnd(1.5, 3.5); w.chopT = 0.2;
+            w.flip = w.side > 0;   // face the tree
+            w.el.classList.remove('walk'); w.el.classList.add('chop');
+        } else {
+            w.x += dx / d * step; w.y += dy / d * step;
+            if (Math.abs(dx) > 0.3) w.flip = dx < 0;
+            w.el.classList.add('walk');
+        }
+        placeWorker(w);
+    });
+}
+
 function floatText(e, txt) {
     const r = $('map').getBoundingClientRect();
     const f = document.createElement('div'); f.className = 'float'; f.innerHTML = txt;
@@ -304,6 +385,7 @@ function buildUpgrades() {
     });
 }
 function updateUI1() {
+    syncWorkers();
     $('wood').textContent = fmt(G1.wood);
     $('planks').textContent = fmt(G1.planks);
     $('wps').textContent = wps();

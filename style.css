@@ -92,10 +92,28 @@ button.big { font-size: 1.05rem; padding: 12px 20px; }
 .stump-img { height: 24px; width: auto; display: block; pointer-events: none; opacity: .8; }
 .tree.hit { animation: shake .15s; }
 .tree.stump { pointer-events: none; }
+.worker { position: absolute; translate: -50% -92%; cursor: pointer; touch-action: manipulation; }
+.worker-img { display: block; height: 54px; width: auto; transform-origin: 50% 100%; filter: drop-shadow(0 3px 2px rgba(0,0,0,.35)); pointer-events: none; }
+.worker.flip .worker-img { scale: -1 1; }
+.worker.walk .worker-img { transform-origin: 50% 55%; animation: workerWalk .5s linear infinite; }
+@keyframes workerWalk {
+    0%, 100% { transform: translateY(0) rotate(-3deg); }
+    25% { transform: translateY(-3px) rotate(0); }
+    50% { transform: translateY(0) rotate(3deg); }
+    75% { transform: translateY(-3px) rotate(0); }
+}
+.worker.chop .worker-img { animation: workerChop .45s ease-in-out infinite; }
+@keyframes workerChop { 0%, 100% { transform: rotate(0); } 35% { transform: rotate(-9deg) translateY(-3px); } 60% { transform: rotate(6deg); } }
+.worker.spawn { animation: workerIn .45s ease-out; }
+@keyframes workerIn { from { transform: scale(0); opacity: 0; } 60% { transform: scale(1.25); } }
+.worker.hop { animation: workerHop .4s ease-out; }
+@keyframes workerHop { 40% { transform: translateY(-16px) scale(1.08); } }
+@media (max-width: 768px) { .worker-img { height: 42px; } }
+@media (max-width: 480px) { .worker-img { height: 34px; } }
 .tree .hp { position: absolute; left: 50%; bottom: -6px; width: 44px; height: 6px; background: #0004; transform: translateX(-50%); border-radius: 3px; overflow: hidden; }
 .tree .hp i { display: block; height: 100%; background: #e85a3c; }
 @keyframes shake { 25% { transform: translate(-54%, -50%) rotate(-5deg); } 75% { transform: translate(-46%, -50%) rotate(5deg); } }
-.float { position: absolute; font-weight: 700; color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; animation: floatUp .9s forwards; z-index: 5; display: flex; align-items: center; gap: 4px; }
+.float { position: absolute; font-weight: 700; color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; animation: floatUp .9s forwards; z-index: 150; display: flex; align-items: center; gap: 4px; }
 .float .icon { height: 1.1em; }
 @keyframes floatUp { to { transform: translateY(-50px); opacity: 0; } }
 .panel { background: #fff8e6; border: 3px solid #6b4423; border-radius: 14px; padding: 14px; }

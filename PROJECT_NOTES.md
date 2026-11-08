@@ -37,11 +37,14 @@ no remote configured as of this writing.
   "move to next stage" prompt in minigame 1 can be declined without losing progress.
 - `stageTransition(key, cb)` plays the full-screen **transition between stages** (`#wipe`). A
   brown circle closes over the screen (`clip-path: circle()`), the name of the next stage appears
-  (`WIPES`: 2 = "The Animals", 3 = "The Flood", `menu` = "The End"), and after ~1.7s it runs `cb`
-  (the actual screen switch) and the circle opens again. It's used only when a stage is **won**:
-  minigame 1 → 2 (confirm), 2 → 3 ("Face the flood"), and at the end of minigame 3. The final
-  button there is **"Back to menu"** (it used to say "Play again"). "Try again" after losing
-  minigame 3, and the menu buttons, switch screens directly, with no transition. `#wipe` has
+  (`WIPES`: 1 = "Building the Ark", 2 = "The Animals", 3 = "The Flood", `menu` = "The End"), and
+  after ~1.7s it runs `cb` (the actual screen switch) and the circle opens again. It's used when
+  **entering stage 1 from the menu** (both "Follow the story" and the minigame 1 card; it's
+  **green**, at the user's request, and ignores clicks while a transition is running) and when a
+  stage is **won**: minigame 1 → 2 (confirm), 2 → 3 ("Face the flood"), and at the end of
+  minigame 3. The final button there is **"Back to menu"** (it used to say "Play again").
+  "Try again" after losing minigame 3, and the menu cards for minigames 2 and 3, switch screens
+  directly, with no transition. `#wipe` has
   z-index 90: above the overlay (50) and the tutorial (55), below the confetti (100).
   Each entry in `WIPES` can have its own `bg`. The stage 3 (Flood) transition is **blue**, at the
   user's request. The final transition ("The End", the `menu` key) is **cream**, with `cream: true`,
@@ -67,6 +70,29 @@ the player must click "Confirm · Call the animals" (or "Keep collecting planks"
 grinding past 300, up to the 1000 cap).
 Upgrade rows: clicking either the small button (`#b_<id>`) or the icon+title (`#t_<id>`, added so
 the icon is also clickable) buys one level.
+
+**Walking helpers (workers), added at the user's request:** each level of "Call a relative of Noah"
+(`worker`) or "Hire villagers to work" (`crew`) puts one person walking around `#map`. The art is in
+`sprites/worker1.png` … `worker9.png` (front view, a sticker style like the animals; `Imagens/workers.jpg`
+is just the reference sheet with all 9). Relatives use workers 1–6 and villagers use 7–9
+(`WORKER_SPRITES`, cycling through them). At most 6 are shown per upgrade (`WORKER_SHOW_MAX`), so
+the map doesn't fill up. They're **visual only**: the wood still comes from `wps()`.
+- `syncWorkers()` runs inside `updateUI1()` and creates whichever ones are missing, so it covers
+  normal purchases, "Max" and the debug key.
+- `tickWorkers(dt)` (its own ~30fps `setInterval` in `startGame1`) moves each one in % of the map
+  to beside a random tree (`pickTree`). On arrival they stop for 1.5–3.5s in the `.chop` animation,
+  shaking the tree (the tree's `hit` class, **no damage**), then pick another tree. If the tree
+  respawns somewhere else, they leave right away.
+- Animations: `.spawn` (pops in when created), `.walk` (its own `@keyframes workerWalk`: a gentle
+  sway of ±3° around the center of the body (`transform-origin: 50% 55%`) plus a 3px bounce on
+  each step, every 0.5s. **Don't reuse `herdWalk`**: it rotated from the feet and the user said it
+  looked like "tripping"), `.chop` (`workerChop`), `.flip` (CSS `scale: -1 1`, faces the direction of
+  movement or the tree), `.hop` (a little jump when clicked).
+- Clicking a worker: plays `SFX.play('workerHi')` (a cute "boop-bip!" in sounds.js), a hop and a
+  floating star. `stopPropagation` keeps the click from chopping a tree underneath.
+- z-index: workers use `2 + y` (whoever is lower on the map is drawn in front). The floating text
+  `.float` went up to z-index 150 so it stays above them.
+- Sizes: 54px, 42px at ≤768px, 34px at ≤480px.
 
 ## Minigame 2 — The Animals (`M` + `H`, `startGame2` in game.js)
 Two phases on the same screen (`#game2`):

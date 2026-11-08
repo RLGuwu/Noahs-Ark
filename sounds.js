@@ -180,6 +180,11 @@ const SFX = (() => {
             tone(c, { freq: 500, freq2: 250, dur: 0.2, vol: 0.3 });
             swish(c, 2000, 800, 0.15, 0.2);
         },
+        // clicking a helper on the map: a cute "boop-bip!"
+        workerHi(c) {
+            tone(c, { freq: 620, freq2: 980, type: 'sine', dur: 0.1, vol: 0.2 });
+            tone(c, { freq: 1180, freq2: 1560, type: 'triangle', start: 0.1, dur: 0.12, vol: 0.16 });
+        },
         // win a minigame: classic cash-register "cha-ching"
         cashRegister(c) {
             tone(c, { freq: 1400, type: 'square', dur: 0.05, vol: 0.18 });
